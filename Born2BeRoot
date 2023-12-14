@@ -1,0 +1,163 @@
+CHECKLIST BORN2BEROOT
+
+per immagini e precisazioni fare riferimento a questa guida:
+
+https://github.com/gemartin99/Born2beroot-Tutorial/blob/main/README_EN.md
+
+in particolare, per le prime fasi della creazione della macchina virtuale, andare qui:
+
+https://github.com/gemartin99/Born2beroot-Tutorial/blob/main/README_EN.md#1--download-the-virtual-machine-iso-
+
+
+comando per verificare se un pacchetto e' installato
+	dpkg -l | grep libpam-pwquality (questo e' per il pacchetto che mette restrizini sulle password)
+
+alcuni passi da scrivere
+
+- STRONG PASSWORD POLICY
+	modificare file /etc/login.defs lanciando comando sudo vim /etc/login.defs
+	PASS_MAX_DAYS 30 (password scade dopo 30 giorni)
+	PASS_MIN_DAYS 2 (si puo' cambiare password ogni 2 giorni massimo)
+	PASS_WARN_AGE 7 (a 7 giorni dalla scadenza della password, arriva un warning)
+	
+	per le altre restrizioni sulle password, controlla se questo pacchetto e' installato lanciando questo comando
+	dpkg -l | grep libpam-pwquality
+	se non e' installato, lancia sudo apt install libpam-pwquality
+	poi modifica questo file lanciando sudo vim /etc/pam.d/common-password
+	
+	aggiungi queste regole in riga alternate da spazi
+	minlen=10
+	ucredit=-1
+	dcredit=-1
+	lcredit=-1
+	maxrepeat=3
+	reject_username
+	difok=7
+	enforce_for_root
+	
+	qui la spiegazione https://www.server-world.info/en/note?os=Debian_10&p=password
+	qui perche' la traccia "questa regola non vale per root" vuol dire che non puoi applicarla a root, non che devi fare una regola a parte
+	
+https://stackoverflow.com/questions/70468477/how-to-set-up-diferent-password-rules-for-regular-users-and-for-root-on-pam
+	
+
+- connecting via SSH
+	- spegni macchina virtuale, settings, network, advanced, attached to: Bridged Adapter;
+	- riaccendi macchina virtuale;
+	- da terminale di pc (non macchina virtuale) lancia questo comando "ssh <user>@localhost -p 4242"
+	sostituendo <user> con scarlucc e hostname con il numero che ottieni lanciando questo comando su
+	macchina virtuale: hostname -I (sara tipo 10.12.250.107)
+
+- script - script - script - script - script - script - script - script - script
+
+#!/bin/bash
+
+memused=$(free -m | awk '$1 == "Mem:" {print $3}')
+memtot=$(free -m | awk '$1 == "Mem:" {print $2}')
+mempercent=$(free -m | awk '$1 == "Mem:" {printf("%.2f", $3/$2*100)}')
+
+diskused=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} END {print memory}'
+)
+disktotal=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memorytot +=$2} END {printf("%.0f", memorytot/1024)}'
+)
+diskpercent=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} {memorytot +=$2} END {printf("%.0f", memory/memorytot*100)}')
+
+linkether=$(ip link | grep "link/ether" | awk '$1 == "link/ether" {print $2}')
+
+
+
+wall " #Architecture: $(uname -a)
+ #CPU physical: $(grep -c "physical id" /proc/cpuinfo)
+ #vCPU: $(grep -c processor /proc/cpuinfo)
+ #Memory Usage: $memused/${memtot}MB ($mempercent%)
+ #Disk Usage: $diskused/${disktotal}GB ($diskpercent%)
+ #CPU load: $(mpstat | awk '$3 == "all" {printf("%.1f\n", 100-$13)}')%
+ #Last boot: $(who -b | awk '$1 == "system" {print $3 " " $4}')
+ #LVM use: $(if [ $(lsblk | grep lvm | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
+ #Connections TCP: $(cat /proc/net/sockstat | awk '$1 == "TCP:" {print $3}') ESTABLISHED
+ #User log: $(users | wc -w)
+ #Network: IP $(hostname -I) ($linkether)
+ #Sudo: $(journalctl _COMM=sudo | grep COMMAND | wc -l) cmd
+"
+
+- script - script - script - script - script - script - script - script - script
+
+per mettere lo script nella macchina virtuale:
+	vim monitoring.sh per creare il file, copia incolla lo script e salva.
+	segnati il percorso del file con il comando pwd (print working directory)
+	
+	quindi bisogna modificare crontab lanciando il comando "crontab -e"
+
+	all'interno del file aggiungere questa riga
+
+	*/10 * * * * sh /percorso/dello/script.sh
+
+	che significa "ogni 10 minuti lancia lo script che trovi a questo indirizzo "
+
+
+per installare lighttpd lanciare questo comando
+	sudo apt install lighttpd
+
+	questo e' un web server incentrato sull'efficienza, usa meno CPU e RAM degli altri server.
+	
+per permettere l'accesso dalla porta 80, usare il comando sudo ufw allow 80
+	poi controllare se ha funzionato usando sudo ufw status
+	perche' proprio la porta 80?
+	
+per installare wordpress, prima installare wget e zip con il comando sudo apt install wget zip.
+	What is wget❓ It is a command line tool used to download files from the web.
+	What is zip❓ It is a command line utility for compressing and decompressing files in ZIP format.
+	
+	poi devi decomprimere il file scaricato, rinominarlo e cambiare i permessi in base al tipo di 		utente.
+
+per installare MariaDB, lancia il comando sudo apt install mariadb-server.
+	What is MariaDB❓ It is a database. It is used for various purposes, such as data warehousing, e-commerce, enterprise-level functions, and logging applications.
+	lancia il comando sudo mysql_secure_installation per rendere sicura l'installazione (rimuovere account non usati e restringere l'accesso al server)
+	se ti parte lo script automatico nel mezzo della procedura, dovrai premere invio per riprenderla.
+	
+	poi accedi a MariaDB con il comando sudo mariadb (non seguire la guida).
+	poi segui tutta la procedura per creare utente, creare database, dare permessi ad utente.
+	
+per installare PHP lanciare il comando sudo apt install php-cgi php-mysql.
+	What is PHP❓ It is a programming language. It is mainly used to develop dynamic web applications and interactive websites. PHP runs on the server side.
+	
+abilita il modulo fastcgi con il comando sudo lighty-enable-mod fastcgi,
+	poi sudo lighty-enable-mod fastcgi-php
+	poi sudo service lighttpd force-reload.
+	
+	lighttpd è un web server progettato per essere sicuro, veloce, fedele agli standard e flessibile, essendo ottimizzato per ambienti con problemi di velocità.
+	
+per accedere al sito wordpress scrivi nella barra del browser localhost:8080.
+	per accedere alla console da admin, scrivi nella barra del browser localhost:8080/wp-admin.
+	email e' quella della 42, password e' Palla12345.
+	
+Come servizio aggiuntivo ho installato FTP (file transfer protocol)
+	istruzioni qui
+	https://github.com/hanshazairi/42-born2beroot#3-file-transfer-protocol-ftp
+	
+	per questo servizio abilito la porta 21, che per convenzione e' dedicata ai servizi FTP.
+	Il trasferimento di file richiede due porte: una per il controllo comandi del client al server) e un'altra per il trasferimento dei dati effettivo.
+	La porta 21 e' per il controllo, mentre per il trasferimento dati viene assegnata una porta dinamicamente a seconda della modalita' (attiva o passiva).
+	controllare se la porta e' attiva con il comando ss -tulpn
+	
+	poi configurare il server FTP con il comando sudo vim /etc/vsftpd.conf
+	decommentare queste righe per permettere ogni tipo di comando di scrittura
+#write_enable=YES
+#local_enable=YES
+#write_enable=YES
+#local_umask=022
+
+	poi devi creare delle cartelle, togliere permesso di scrittura a tutti cosi' che non vengano modificate, poi creare una whitelist in cui inserire i nomi degli utenti a cui e' permesso connettersi al server e modificare le configurazioni di conseguenza.
+	
+	per controllare se e' acceso e funzionante, lanciare il comando
+	systemctl status vsftpd
+	
+	per connettersi al server FTP lanciare il comando
+	ftp localhost
+	usare nome utente e password come al solito
+	a questo punto sei dentro al server FTP, userai la sua riga di comando
+	per tornare alla riga di comando della macchina virtuale, scrivi exit
+	
+	puoi accendere e spegnere il servizio vsftpd con questi comandi
+	spegnere: sudo systemctl stop vsftpd
+	accendere: sudo systemctl start vsftpd

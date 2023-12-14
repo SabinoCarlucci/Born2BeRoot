@@ -1,0 +1,324 @@
+per immagini e precisazioni fare riferimento a questa guida:
+
+https://github.com/gemartin99/Born2beroot-Tutorial/blob/main/README_EN.md
+
+
+PROJECT OVERVIEW
+1) dove si trova il file .vdi con la firma della macchina virtuale?
+
+	/nfs/homes/scarlucc/sgoinfre/scarlucc/born2beroot
+	
+	lancia il comando sha1sum nome_del_file.vdi (ci mette diversi minuti)
+	
+2) come funziona una macchina virtuale?
+	
+	e' un software che simula un computer, permette di avere piu' ambienti anche con sistemi operativi diversi, tutto sullo stesso hardware.
+
+3) perche' hai scelto questo sistema operativo?
+
+	principalmente perche' sono un novellino e Debian e' suggerito per i novellini.
+	Se vuoi argomenti oggettivi, direi che e' piu' semplice da usare, io non ho necessita' particolari, ha molti tutorial, molti pacchetti.
+
+4) differenze principali tra i sistemi operativi proposti dalla traccia.
+	
+	Debian: rilasci ogni due anni circa (c'e' tempo per correggere bug)
+	Rocky: rilasci regolari ma meno frequenti (stabile)
+	
+	Debian: interfaccia grafica piu' semplice, quindi prferito per uso desktop.
+	Rocky: piu' affidabile ma meno intuitivo da usare, quindi preferito per i server.
+	
+	Debian: piu' pacchetti software.
+	Rocky: compatibile con Red Hat Enterprise Linux, quindi puo' usare i suoi pacchetti.
+	
+	Debian: facile fare upgrade
+	Rocky: upgrade rognoso, meglio reinstallare
+	
+	Debian: apt-get come package manager
+	Rocky: yum come gestore di pacchetti
+	
+	Debian: supporto per diverse architetture
+	Rocky: invece no
+	
+5) a che servono le macchine virtuali?
+	mi permettono di testare se il software che sto sviluppando funziona su sistemi operativi diversi, e posso testare software potenzialmente pericolosi senza rischiare il mio pc.
+
+6) siccome hai scelto Debian:
+	6.1) differenza tra aptitude e apt;
+		apt e' basso livello, aptitude e' alto livello.
+		apt e' piu' semplice, ma ha meno funzionalita' quindi per le cose semplici e' meglio apt (es. installare pacchetti "sudo apt install pacchetto") mentre per le cose piu' complicate e' meglio aptitude (es. risoluzione conflitti tra pacchetti) perche' da' piu' liberta' e cotrollo.
+		
+	6.2) cos'e' APParmor;
+		un modulo di sicurezza di linux che permette all'amministratore di porre restrizioni sui programmi, es. a quali cartelle puo' accedere un programma.
+		 
+	6.3) lo script deve funzionare ogni 10 minuti. le spiegazioni devono essere chiare.
+		funziona
+
+
+SIMPLE SETUP
+7) controlla che la macchina virtuale non abbia un'interfaccia grafica all'avvio.
+
+		lancia questo comando: ls /usr/bin/*session
+		se il risultato e' /usr/bin/dbus-run-session
+		allora non c'e' interfaccia grafica.	
+	
+	7.1) verra' richiesta una password prima di collegarsi alla macchina (palla1234)
+		DEVO CAMBIARE LA PASSWORD DI ROOT?
+		
+	7.2) collegati con un utente con l'aiuto dello studente valutato (utente non root).
+			scarlucc non e' root, quindi ok.
+		
+	7.3) la password deve essere conforme alle regole.
+	lancia questo comando per controllare: sudo sudo chage -l nome_utente
+	
+	vedrai dopo quanti giorni scade la password, quanti giorni prima della scadenza arriva la notifica, e quanti giorni aspettare per cambiare password (come nel punto 12.2) per l'account attuale.
+	Quando implementi queste regole, esse vengono applicate per gli account creati successivamente, mentre per quelli creati prima bisogna cambiarle a mano, lanciando il seguente comando:
+	
+	sudo chage nome_utente
+	
+8) controlla che il servizio UFW sia avviato.
+	
+	sudo ufw status
+	sudo service ufw status
+	
+	UFW (Uncomplicated Firewall) è un frontend per iptables, che è il sistema di filtraggio del traffico di rete di Linux. UFW semplifica notevolmente la configurazione di iptables, rendendo più accessibile agli utenti meno esperti la gestione delle regole del firewall su sistemi Linux.
+	
+	semplicita' d'uso e interfaccia da riga di comando
+	
+	sudo ufw enable (accendi)
+	sudo ufw disable (spegni)
+
+9) controlla che il servizio SSH sia avviato.
+
+	sudo service ssh status
+
+10) controlla che il sistema operativo sia Debian.
+	
+	head -n 2 /etc/os-release
+	grep PRETTY /etc/os-release
+	cat /etc/os-release
+
+	se lanci quello della guida (uname -v) ti dice la versione del kernel, che e' 6.1.55-1 (2023-09-29)
+
+
+USER
+11) controlla che un utente con il mio login faccia parte dei gruppi sudo e user42.
+	
+		getent group sudo
+		getent group user42
+
+12) controlla le regole sulle password:
+	12.1) crea un nuovo utente con una password.
+		
+		sudo adduser nome_utente
+		segui procedura password
+		
+		getent passwd | cut -d: -f1 (per elenco utenti)
+
+	12.2) come hai fatto a implementare le regole sulle password? dovresti aver modificato dei file.
+	
+		sudo vim /etc/login.defs
+		sudo vim /etc/pam.d/common-password
+	
+	modificare file /etc/login.defs lanciando comando sudo vim /etc/login.defs
+	PASS_MAX_DAYS 30 (password scade dopo 30 giorni)
+	PASS_MIN_DAYS 2 (si puo' cambiare password ogni 2 giorni massimo)
+	PASS_WARN_AGE 7 (a 7 giorni dalla scadenza della password, arriva un warning)
+	
+	per le altre restrizioni sulle password, controlla se questo pacchetto e' installato lanciando questo comando
+	dpkg -l | grep libpam-pwquality
+	se non e' installato, lancia sudo apt install libpam-pwquality
+	poi modifica questo file lanciando sudo vim /etc/pam.d/common-password
+	
+	aggiungi queste regole in riga alternate da spazi
+	minlen=10
+	ucredit=-1
+	dcredit=-1
+	lcredit=-1
+	maxrepeat=3
+	reject_username
+	difok=7
+	enforce_for_root
+	
+	qui la spiegazione https://www.server-world.info/en/note?os=Debian_10&p=password
+	qui perche' la traccia "questa regola non vale per root" vuol dire che non puoi applicarla a root, non che devi fare una regola a parte
+	
+https://stackoverflow.com/questions/70468477/how-to-set-up-diferent-password-rules-for-regular-users-and-for-root-on-pam
+
+	12.3) crea un gruppo chiamato "evaluating" e assegnalo al nuovo utente. Controlla che abbia funzionato.
+	
+	sudo addgroup nome_gruppo
+	sudo usermod -aG evaluating mimmo
+	getent group evaluating
+	
+	sudo delgroup evaluating (per cancellare gruppo)
+	
+	12.4) quali sono i vantaggi di questa politica sulle password? E i vantaggi e svantaggi della sua implementazione?
+	VANTAGGI:
+		maggior sicurezza, resistenza ad attacchi di forza bruta, conformita' alle normative.
+	SVANTAGGI:
+		difficolta' a ricordare le password, quindi resettare e sbloccare account perche' utenti dimenticano, magari se le scrivono rendendo la cosa controproducente, in generale serve piu' supporto tecnico. 
+
+
+HOSTNAME AND PARTITIONS
+13) controlla che l'hostname della macchina sia scarlucc42.
+	scrivi hostname nella riga di comando
+
+14) cambia l'hostname e riavvia la macchina virtuale. All'avvio l'hostname deve essere cambiato.
+	sudo vim /etc/hostname e cambia il contenuto del file con il nuovo hostname (es. pippo42).
+	
+	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il nuovo (es. pippo42)
+	reboot della macchina con comando sudo reboot.
+	una volta riavviato, vedrai il nuovo host (se stai lavorando con ssh, dovrai reinserire la password di root dalla finestra della macchina virtuale)
+
+15) rimetti l'hostname di prima
+	sudo vim /etc/hostname e cambia il contenuto del file con il nuovo hostname (es. pippo42).
+	
+	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il nuovo (es. pippo42)
+	reboot della macchina con comando sudo reboot.
+
+16) come si vedono le partizioni della machcina virtuale?
+	lanciando il comando lsblk (la memoria allocata non deve essere esattamente come nella traccia, ma le partizioni si)
+
+17) come funziona LVM? A che serve? Parlane un po'.
+	Logical Volume Manager e' uno strumento usato in ambienti Linux per gestire le partizioni in maniera flessibile.
+	
+
+SUDO----------------
+18) cotrolla che SUDO sia installato correttamente.
+	which sudo (piu' veloce)
+	dpkg -s sudo (piu' migliore assai)
+
+19) assegna il gruppo sudo al nuovo utente.
+	sudo adduser nuovo_utente sudo (per aggiungerlo)
+	getent group sudo (per controllare)
+	
+20) controlla le regole di sudo.
+	20.1) usando esempi a scelta, spiega il valore di sudo e come funziona.
+		sudo permette ad un utente di eseguire alcuni comandi come se fosse root, questo permette di fare il tuo lavoro senza rischiare troppo.
+		esempi sono installare pacchetti e gestire impostazioni di sistema.
+		
+		sudo apt install nome_pacchetto
+		sudo useradd nuovo_utente
+		sudo vim /etc/hostname
+		
+		altre cose vanno fatte per forza dall'account root, tipo controllare il log dei comandi root.
+		
+	20.2) come hai implementato le regole imposte dalla traccia?
+		vim /etc/sudoers.d/sudo_config per vedere il file dove implemento le regole
+	
+21) controlla che la cartella /var/log/sudo abbia almeno un file.
+	sudo -u root -i	(per passare a utente root)
+	poi cd /var/log/sudo (per spostarti nella cartella)
+	quindi ls per vedere i file che contiene
+	
+	21.1) controlla che contenga un log dei comandi lanciati con sudo
+		cat sudo_config
+		
+	21.2) lancia un comando con sudo e controlla che il log si sia aggiornato.
+		sudo vim helloworld
+		cat sudo_config		
+
+
+UFW-------------------------
+22) controlla che ufw sia installato
+	dpkg -s ufw (-s sta per stato)
+
+23) controlla che funzioni
+	sudo service ufw status
+
+24) cos'e' ufw e a che serve usarlo?
+	UFW (Uncomplicated Firewall) è un frontend per iptables, che è il sistema di filtraggio del traffico di rete di Linux. UFW semplifica notevolmente la configurazione di iptables, rendendo più accessibile agli utenti meno esperti la gestione delle regole del firewall su sistemi Linux.
+
+25) come si vedono le regole attive per ufw? controlla quella per la porta 4242.
+	sudo ufw status numbered
+
+26) aggiungi una regola per aprire la porta 8080. controlla che sia stata aggiunta alle altre.
+	sudo ufw allow 8080
+	
+27) cancella questa nuova regola.
+	sudo ufw delete num_rule (serve sapere il numero della regola, tipo sudo ufw delete 3)
+
+
+SSH-----------------------
+28) controlla che il servizio SSH sia installato
+	sudo service ssh status
+
+29) controlla che funzioni
+	sudo service ssh status
+
+30) cos'e' SSH e a che serve?
+	SSH (Secure SHell) è un protocollo di rete crittografato che consente di effettuare comunicazioni sicure su una rete non sicura. Il protocollo SSH fornisce una connessione sicura e crittografata tra due dispositivi, consentendo l'esecuzione di comandi remoti o la trasmissione sicura di dati tra di essi.
+	
+	ci permette di collegarci alla macchina virtuale da un qualunque pc e controllarla.
+
+31) controlla che il servizio ssh usi solo la porta 4242
+	sermpre con il comando sudo service ssh status, puoi vedere "listening on port 4242",quindi anche se dal temrminale mi collego alla porta 4444, sto rispettando la traccia, perche' la traccia non dice che anche la porta dal mio pc deve essere 4242.
+
+32) usa ssh per fare login con il nuovo utente, usando una password o una chiave, a scelta tua.
+	prima devi fare login con utente root
+	sudo -u root -i
+	poi devi editare questo file
+	vim /etc/ssh/sshd_config
+	e inserire l'utente che ti interessa dopo AllowUsers
+	
+33) controlla che non si possa usare ssh con utente root.
+	puoi provare semplicemente a fare login, poi vedi anche questo file /etc/ssh/sshd_config, se non c'e' l'utente root tra quelli ammessi, non ti fa entrare.
+
+
+SCRIPT MONITORING----------------------
+34) mostra il codice e spiega come funziona lo script.
+	vim /home/scarlucc/monitoring.sh per aprire il file, per la spiegazione vedi file apposito.
+
+35) cos'e' cron?
+	Cron è un servizio di pianificazione delle attività su sistemi Unix e Unix-like. Consente di eseguire automaticamente script, comandi o programmi in momenti specifici o a intervalli regolari automaticamente.
+	
+	si configura con crontab, un file editabile con il comando crontab -e, ma dobbiamo essere su account root, altrimenti vedrai il messaggio solo sull'account di un utente specifico.
+	
+36) come hai fatto a impostare il lancio automatico dello script ogni 10 minuti?
+	*/10 all'inizio della riga, perche' quello indica i minuti.
+	
+	36.1) cambia il timer da ogni 10 a ogni minuto.
+		passa ad utente root: sudo -u root -i
+		modifica il file crontab di root: crontab -e
+		*/1
+	
+	36.2) controlla che lo script usi valori dinamici (?????????????)
+		lancialo piu' volte e vedi che i valori cambiano
+		per lanciarlo: sh monitoring.sh
+		oppure controlla le i comandi dello script
+		
+	36.3) fai in modo che lo script non parta piu' in automatico
+		rimuovi la riga nel file crontab.
+		
+	36.4) riavvia la macchina virtuale, controlla che lo script non e' cambiato, e' ancora nella stessa cartella, ha ancora gli stessi permessi.
+
+
+BONUS---------------------
+37) le partizioni fatte come da bonus valgono 2 punti.
+
+38) wordpress con i soli servizi richiesti vale un punto.
+
+	per accedere al sito wordpress scrivi nella barra del browser localhost:8080.
+	per accedere alla console da admin, scrivi nella barra del browser localhost:8080/wp-admin.
+	email e' quella della 42, password e' Palla12345.
+	
+	per controllare mariadb
+		sudo service mariadb status, poi ctrl + z per tornare al terminale
+		
+	per controllare php
+		php -v
+		
+		linguaggio di programmazione usato per i server
+	
+	per controllare lighttpd
+		sudo service lighttpd status
+		
+		lighttpd è un web server progettato per essere sicuro, veloce, fedele agli standard e flessibile, essendo ottimizzato per ambienti con problemi di velocità.
+	
+
+39) il servizio extra vale 1 punto.
+	Come servizio aggiuntivo ho installato vsftpd (server per file transfer protocol)
+	
+	controllare che sia installato con: dpkg -l | grep vsftpd
+	
+	sudo service vsftpd status

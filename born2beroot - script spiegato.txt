@@ -1,0 +1,118 @@
+SCRIPT COMPLETO
+
+
+#!/bin/bash
+
+memused=$(free -m | awk '$1 == "Mem:" {print $3}')
+memtot=$(free -m | awk '$1 == "Mem:" {print $2}')
+mempercent=$(free -m | awk '$1 == "Mem:" {printf("%.2f", $3/$2*100)}')
+
+diskused=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} END {print memory}'
+)
+disktotal=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memorytot +=$2} END {printf("%.0f", memorytot/1024)}'
+)
+diskpercent=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} {memorytot +=$2} END {printf("%.0f", memory/memorytot*100)}')
+
+linkether=$(ip link | grep "link/ether" | awk '$1 == "link/ether" {print $2}')
+
+
+
+wall " #Architecture: $(uname -a)
+ #CPU physical: $(grep -c "physical id" /proc/cpuinfo)
+ #vCPU: $(grep -c processor /proc/cpuinfo)
+ #Memory Usage: $memused/${memtot}MB ($mempercent%)
+ #Disk Usage: $diskused/${disktotal}GB ($diskpercent%)
+ #CPU load: $(mpstat | awk '$3 == "all" {printf("%.1f\n", 100-$13)}')%
+ #Last boot: $(who -b | awk '$1 == "system" {print $3 " " $4}')
+ #LVM use: $(if [ $(lsblk | grep lvm | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
+ #Connections TCP: $(cat /proc/net/sockstat | awk '$1 == "TCP:" {print $3}') ESTABLISHED
+ #User log: $(users | wc -w)
+ #Network: IP $(hostname -I) ($linkether)
+ #Sudo: $(journalctl _COMM=sudo | grep COMMAND | wc -l) cmd
+"
+--------------------------------------------------------------------------------------------
+SPIEGAZIONE
+
+wall " #Architecture: $(uname -a)
+
+uname fornisce informazioni sul sistema operativo. -a sta per all, e mi da tutte le informazioni sul sistema operativo
+
+
+ #CPU physical: $(grep -c "physical id" /proc/cpuinfo)
+
+grep serve a fare ricerca in un testo. Per contare le cpu fisiche andiamo nel file /proc/cpuinfo
+e contiamo (con flag -c) quante righe iniziano con "physical id".
+
+
+ #vCPU: $(grep -c processor /proc/cpuinfo)
+ 
+stessa csa di prima, solo che stavolta contiamo i processori.
+
+
+ #Memory Usage: $memused/${memtot}MB ($mempercent%)
+ 
+memused=$(free -m | awk '$1 == "Mem:" {print $3}')
+memtot=$(free -m | awk '$1 == "Mem:" {print $2}')
+mempercent=$(free -m | awk '$1 == "Mem:" {printf("%.2f", $3/$2*100)}')
+
+free ci mostra informazioni sull'uso della memoria del sistema, il flag -m mostra le misure in megabyte.
+L'output viene passato in input al comando awk che manipola il testo: se la riga inizia per Mem, stampiamo una determinata colonna (per memused e memtot).
+Per mempercent facciamo calcoli per la percentuale usata,  la scritta "%.2f" serve per limitare i decimali a due dopo la virgola.
+
+
+ #Disk Usage: $diskused/${disktotal}GB ($diskpercent%)
+ 
+diskused=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} END {print memory}'
+)
+disktotal=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memorytot +=$2} END {printf("%.0f", memorytot/1024)}'
+)
+diskpercent=$(df -m | grep "^/dev/" | grep -v "/boot$" | awk '{memory +=$3} {memorytot +=$2} END {printf("%.0f", memory/memorytot*100)}')
+
+df mostra lo spazio disponibile sui vari filesystem, -m mostra i numeri in megabyte.
+grep filtra i risultati, prende solo quelli che iniziano (^ serve a questo) per /dev/.
+poi filtra di nuovo escludendo quelli che finiscono ($ serve a questo) per boot.
+poi somma tutti i numeri in una specifica colonna.
+nel caso della memoria totale, converte il risultato in gigabyte (diviso 1024)
+
+
+# CPU LOAD
+installa mpstat con questo comando (mpstat sta dentro sysstat)
+	sudo apt-get install sysstat
+il comando e' questo:
+ #CPU load: $(mpstat | awk '$3 == "all" {printf("%.1f\n", 100-$13)}')%
+
+prendi l'output di mpstat, se la terza colonna e' "all" prendi il valore nella stessa riga, alla colonna 13, e sottrailo da 100, poi stampalo con un solo decimale.
+
+
+# LAST BOOT
+ #Last boot: $(who -b | awk '$1 == "system" {print $3 " " $4}')
+
+who -b mi da' le informazioni sull'ultimo avvio, poi vado a stampare solo le colonne 3 e 4.
+puoi controllare col comando sudo reboot
+
+
+# LVM USE
+#LVM use: $(if [ $(lsblk | grep lvm | wc -l) -gt 0 ]; then echo yes; else echo no; fi)
+
+lancia lsblk (list block, spiega cosa fa), filtra le righe con lvm (spiega cos'e' LVM), contale, se sono piu' di zero scrivi yes, altrimenti scrivi no.
+
+
+# TCP CONNEXIONS
+ #Connections TCP: $(cat /proc/net/sockstat | awk '$1 == "TCP:" {print $3}') ESTABLISHED
+ 
+ con cat leggo il file (spiega perche' ci sono queste informazioni nel file), poi filtro solo quella che mi serve e la stampo
+
+
+# USER LOG
+ulog=$(users | wc -w)
+
+conto le parole nell'output
+
+
+# NETWORK
+ip=$(hostname -I)
+mac=$(ip link | grep "link/ether" | awk '{print $2}')
+
+
+# SUDO
+cmnd=$(journalctl _COMM=sudo | grep COMMAND | wc -l)
