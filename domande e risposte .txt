@@ -131,14 +131,14 @@ USER
 	poi modifica questo file lanciando sudo vim /etc/pam.d/common-password
 	
 	aggiungi queste regole in riga alternate da spazi
-	minlen=10
-	ucredit=-1
-	dcredit=-1
-	lcredit=-1
-	maxrepeat=3
-	reject_username
-	difok=7
-	enforce_for_root
+	minlen=10  (lunghezza minima password)
+	ucredit=-1  (caratteri maiuscoli ammessi, -1 vuol dire almeno uno)
+	dcredit=-1  (caratteri numerici ammessi, -1 vuol dire almeno uno)
+	lcredit=-1  (caratteri minuscoli ammessi, -1 vuol dire almeno uno)
+	maxrepeat=3  (caratteri uguali consecutivi ammessi)
+	reject_username  (la password non deve contenere il nome utente)
+	difok=7  (numero minimo di caratteri diversi dalla vecchia password)
+	enforce_for_root  (applica anche a root)
 	
 	qui la spiegazione https://www.server-world.info/en/note?os=Debian_10&p=password
 	qui perche' la traccia "questa regola non vale per root" vuol dire che non puoi applicarla a root, non che devi fare una regola a parte
