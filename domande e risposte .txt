@@ -168,13 +168,16 @@ HOSTNAME AND PARTITIONS
 	sudo vim /etc/hostname e cambia il contenuto del file con il nuovo hostname (es. pippo42).
 	
 	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il nuovo (es. pippo42)
+
+	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il nuovo (es. pippo42)
+
 	reboot della macchina con comando sudo reboot.
 	una volta riavviato, vedrai il nuovo host (se stai lavorando con ssh, dovrai reinserire la password di root dalla finestra della macchina virtuale)
 
 15) rimetti l'hostname di prima
-	sudo vim /etc/hostname e cambia il contenuto del file con il nuovo hostname (es. pippo42).
+	sudo vim /etc/hostname e cambia il contenuto del file con quello vecchio hostname (es. scarlucc42).
+	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il vecchio (es. scarlucc42)
 	
-	poi lancia questo comando sudo nano /etc/hosts e cambia tuo_login_42 con il nuovo (es. pippo42)
 	reboot della macchina con comando sudo reboot.
 
 16) come si vedono le partizioni della machcina virtuale?
