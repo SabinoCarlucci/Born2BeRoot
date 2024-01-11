@@ -42,11 +42,13 @@ https://stackoverflow.com/questions/70468477/how-to-set-up-diferent-password-rul
 	
 
 - connecting via SSH
-	- spegni macchina virtuale, settings, network, advanced, attached to: Bridged Adapter;
+	- spegni macchina virtuale, settings, network, advanced, attached to: NAT;
+	- advanced, port forwarding: Rule1(host port: 4444) (guest port: 4242), Rule2(host port: 8080) (guest port: 80)
 	- riaccendi macchina virtuale;
-	- da terminale di pc (non macchina virtuale) lancia questo comando "ssh <user>@localhost -p 4242"
-	sostituendo <user> con scarlucc e hostname con il numero che ottieni lanciando questo comando su
-	macchina virtuale: hostname -I (sara tipo 10.12.250.107)
+	- da terminale di pc (non macchina virtuale) lancia questo comando "ssh <user>@localhost -p 4444"
+	sostituendo <user> con il tuo nome utente
+
+puoi ottenere l'hostname lanciando questo comando su macchina virtuale: hostname -I (sara tipo 10.12.250.107)
 
 - script - script - script - script - script - script - script - script - script
 
