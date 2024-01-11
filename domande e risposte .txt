@@ -59,7 +59,9 @@ SIMPLE SETUP
 
 		lancia questo comando: ls /usr/bin/*session
 		se il risultato e' /usr/bin/dbus-run-session
-		allora non c'e' interfaccia grafica.	
+		allora non c'e' interfaccia grafica.
+
+	quello che fa il comando e' elencare i file che corrispondono al modello "*session" nella directory "/usr/bin". Se il risultato di questo comando include solo "/usr/bin/dbus-run-session", significa che ci sono solo processi di sessione D-Bus presenti e quindi non e' presente un ambiente desktop grafico completo.
 	
 	7.1) verra' richiesta una password prima di collegarsi alla macchina (palla1234)
 		DEVO CAMBIARE LA PASSWORD DI ROOT?
