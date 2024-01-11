@@ -180,7 +180,7 @@ HOSTNAME AND PARTITIONS
 	
 	reboot della macchina con comando sudo reboot.
 
-16) come si vedono le partizioni della machcina virtuale?
+16) come si vedono le partizioni della macchina virtuale?
 	lanciando il comando lsblk (la memoria allocata non deve essere esattamente come nella traccia, ma le partizioni si)
 
 17) come funziona LVM? A che serve? Parlane un po'.
