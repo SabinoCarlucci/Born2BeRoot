@@ -63,11 +63,10 @@ SIMPLE SETUP
 
 	quello che fa il comando e' elencare i file che corrispondono al modello "*session" nella directory "/usr/bin". Se il risultato di questo comando include solo "/usr/bin/dbus-run-session", significa che ci sono solo processi di sessione D-Bus presenti e quindi non e' presente un ambiente desktop grafico completo.
 	
-	7.1) verra' richiesta una password prima di collegarsi alla macchina (palla1234)
-		DEVO CAMBIARE LA PASSWORD DI ROOT?
+	7.1) verra' richiesta una password prima di collegarsi alla macchina (quella dell'utente)
 		
 	7.2) collegati con un utente con l'aiuto dello studente valutato (utente non root).
-			scarlucc non e' root, quindi ok.
+			il tuo nome utente non e' root, quindi ok.
 		
 	7.3) la password deve essere conforme alle regole.
 	lancia questo comando per controllare: sudo sudo chage -l nome_utente
